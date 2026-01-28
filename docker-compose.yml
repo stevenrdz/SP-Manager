@@ -1,0 +1,48 @@
+services:
+  sp-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sp-manager-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mongodb://mongo:27017/sp-metadata
+      - SQL_SERVER_HOST=${SQL_HOST}
+      - SQL_SERVER_USER=${SQL_USER}
+      - SQL_SERVER_PASSWORD=${SQL_PASSWORD}
+      - SQL_SERVER_DATABASE=${SQL_DB}
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mongo:
+    image: mongo:latest
+    container_name: sp-manager-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    container_name: sp-manager-mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:

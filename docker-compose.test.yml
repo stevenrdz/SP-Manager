@@ -1,0 +1,83 @@
+services:
+  # Servicio de testing
+  api-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: sp-manager-tests
+    environment:
+      # Variables de entorno para testing
+      NODE_ENV: test
+      MONGODB_URI: mongodb://mongo:27017/sp-manager-test
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      SQL_PORT: ${SQL_PORT:-1433}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      # Montar código fuente para desarrollo
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./test-results:/app/test-results
+      # Excluir node_modules del host
+      - /app/node_modules
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - sp-manager-test-network
+    command: npm run test
+
+  # MongoDB para tests
+  mongo:
+    image: mongo:7
+    container_name: sp-manager-mongo-test
+    environment:
+      MONGO_INITDB_DATABASE: sp-manager-test
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-test-data:/data/db
+    networks:
+      - sp-manager-test-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Servicio para ejecutar Swagger UI (opcional)
+  swagger-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sp-manager-swagger
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/sp-manager
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      SQL_PORT: ${SQL_PORT:-1433}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - mongo
+    networks:
+      - sp-manager-test-network
+    command: npm run dev
+
+volumes:
+  mongo-test-data:
+
+networks:
+  sp-manager-test-network:
+    driver: bridge

@@ -1,0 +1,29 @@
+[
+  {
+    "database": "SampleDB",
+    "schema": "dbo",
+    "spName": "GetCustomerById",
+    "description": "Retrieves customer information by ID",
+    "projectReferences": ["CRM", "CustomerPortal"],
+    "tablesUsed": ["Customers", "Orders"],
+    "lastScanned": "2026-01-28T10:00:00.000Z"
+  },
+  {
+    "database": "SampleDB",
+    "schema": "dbo",
+    "spName": "CreateOrder",
+    "description": "Creates a new order for a customer",
+    "projectReferences": ["E-Commerce", "OrderManagement"],
+    "tablesUsed": ["Orders", "OrderDetails", "Products"],
+    "lastScanned": "2026-01-28T10:00:00.000Z"
+  },
+  {
+    "database": "SampleDB",
+    "schema": "sales",
+    "spName": "GenerateMonthlyReport",
+    "description": "Generates monthly sales report with aggregated data",
+    "projectReferences": ["Reporting", "Analytics"],
+    "tablesUsed": ["Sales", "SalesDetails", "Customers"],
+    "lastScanned": "2026-01-28T10:00:00.000Z"
+  }
+]

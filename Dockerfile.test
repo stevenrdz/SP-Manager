@@ -1,0 +1,35 @@
+# Dockerfile para testing de API
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar todas las dependencias (producción + dev)
+RUN npm install --legacy-peer-deps && \
+    npm install --save-dev --legacy-peer-deps \
+    jest \
+    @types/jest \
+    ts-jest \
+    supertest \
+    @types/supertest \
+    jest-environment-node \
+    @testing-library/jest-dom
+
+
+# Copiar código fuente
+COPY . .
+
+# Crear directorio para reportes de tests
+RUN mkdir -p /app/test-results
+
+# Comando por defecto: ejecutar tests
+CMD ["npm", "run", "test"]
+
