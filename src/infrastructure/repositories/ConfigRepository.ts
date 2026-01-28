@@ -1,7 +1,8 @@
 import { ConfigModel } from '../database/schemas/ConfigSchema';
 import { AppConfig, DatabaseConfig, OpenAIConfig } from '@/domain/models/Config';
+import { IConfigRepository } from '@/domain/repositories';
 
-export class ConfigRepository {
+export class ConfigRepository implements IConfigRepository {
   /**
    * Get the current application configuration
    */

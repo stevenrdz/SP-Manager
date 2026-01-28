@@ -1,15 +1,16 @@
+import { IConfigRepository } from '@/domain/repositories';
 import { ConfigRepository } from '@/infrastructure/repositories/ConfigRepository';
 import { AppConfig, DatabaseConfig, OpenAIConfig } from '@/domain/models/Config';
 import * as sql from 'mssql';
 
 export class ConfigService {
-  private repository: ConfigRepository;
+  private repository: IConfigRepository;
   private cachedConfig: AppConfig | null = null;
   private cacheTimestamp: number = 0;
   private CACHE_TTL = 60000; // 1 minute cache
 
-  constructor() {
-    this.repository = new ConfigRepository();
+  constructor(repository?: IConfigRepository) {
+    this.repository = repository || new ConfigRepository();
   }
 
   /**

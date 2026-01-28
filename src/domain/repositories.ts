@@ -22,3 +22,9 @@ export interface IMetadataRepository {
     topProjects: { project: string; count: number }[];
   }>;
 }
+
+export interface IConfigRepository {
+  getConfig(): Promise<import("./models/Config").AppConfig | null>;
+  updateDatabaseConfig(config: import("./models/Config").DatabaseConfig): Promise<void>;
+  updateOpenAIConfig(config: import("./models/Config").OpenAIConfig): Promise<void>;
+}

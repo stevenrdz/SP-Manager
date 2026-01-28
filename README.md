@@ -24,6 +24,17 @@
 
 ---
 
+## 🎮 Modo Demo
+
+El proyecto incluye un **Modo Demo** completo que permite ejecutar la aplicación sin necesidad de configurar bases de datos (SQL Server ni MongoDB).
+
+- Utiliza datos simulados (mocks)
+- Ideal para despliegues rápidos en Vercel/Netlify para demostración
+- Se activa con `NEXT_PUBLIC_DEMO_MODE=true`
+- [Ver documentación del Modo Demo](DEMO.md)
+
+---
+
 ## 🚀 Stack Tecnológico
 
 ### Frontend

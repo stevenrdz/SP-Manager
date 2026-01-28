@@ -65,9 +65,16 @@ const AppHeader: React.FC = () => {
               <Menu size={20} />
             </button>
 
-            <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent hidden sm:block">
-              SQL Manager
-            </h1>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent hidden sm:block">
+                SQL Manager
+              </h1>
+              {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+                <span className="hidden sm:inline-block text-[10px] uppercase font-bold text-amber-500 tracking-wider">
+                  Live Demo Mode
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-4 flex-1 justify-end">
