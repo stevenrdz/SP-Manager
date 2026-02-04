@@ -32,6 +32,14 @@ export const dynamic = 'force-dynamic';
  *           default: mongo
  *         description: Fuente de datos (MongoDB o SQL Server)
  *         example: "mongo"
+ *       - in: query
+ *         name: mode
+ *         schema:
+ *           type: string
+ *           enum: [name, code]
+ *           default: name
+ *         description: Modo de búsqueda (por nombre o dentro del código)
+ *         example: "code"
  *     responses:
  *       200:
  *         description: Lista de stored procedures encontrados
@@ -50,6 +58,8 @@ export const dynamic = 'force-dynamic';
  *                     type: string
  *                   objectId:
  *                     type: number
+ *                   snippet:
+ *                     type: string
  *       400:
  *         description: Parámetros requeridos faltantes
  *       500:
@@ -59,6 +69,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const db = searchParams.get('db') || undefined;
   const search = searchParams.get('q') || undefined;
+  const mode = searchParams.get('mode') || 'name';
   const source = (searchParams.get('source') as 'mongo' | 'sql') || 'mongo';
 
   if (!db && !search) {
@@ -67,6 +78,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const service = getSpService();
+    
+    if (mode === 'code' && search) {
+      const sps = await service.searchInCode(search);
+      return NextResponse.json(sps);
+    }
+
     const sps = await service.searchStoredProcedures(db, search, source);
     return NextResponse.json(sps);
   } catch (error) {

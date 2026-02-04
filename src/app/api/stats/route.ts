@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSpService } from '@/application/di';
+export const dynamic = 'force-dynamic';
 
 /**
  * @swagger

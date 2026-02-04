@@ -1,0 +1,236 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SP Manager API",
+    "version": "1.0.0",
+    "description": "API completa para gestionar y documentar Stored Procedures de SQL Server."
+  },
+  "servers": [
+    {
+      "url": "https://sp-manager-demo.vercel.app",
+      "description": "Servidor de Producción / Demo"
+    }
+  ],
+  "paths": {
+    "/api/databases": {
+      "get": {
+        "tags": ["Databases"],
+        "summary": "Listar todas las bases de datos",
+        "description": "Obtiene la lista de todas las bases de datos disponibles.",
+        "responses": {
+          "200": {
+            "description": "Lista de bases de datos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "example": ["Ventas", "Logistica", "RRHH"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Obtener estadísticas del sistema",
+        "description": "Obtiene estadísticas generales sobre bases de datos, stored procedures y proyectos",
+        "responses": {
+          "200": {
+            "description": "Estadísticas obtenidas exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalDatabases": { "type": "number" },
+                    "totalSPs": { "type": "number" },
+                    "totalProjects": { "type": "number" },
+                    "spsByDatabase": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": ["Projects"],
+        "summary": "Listar todos los proyectos",
+        "description": "Obtiene la lista de todos los proyectos que tienen stored procedures asociados",
+        "responses": {
+          "200": {
+            "description": "Lista de proyectos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "example": ["WebFormCapacitacion", "PortalClientes"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectName}/sps": {
+      "get": {
+        "tags": ["Projects"],
+        "summary": "Obtener SPs de un proyecto",
+        "parameters": [
+          {
+            "name": "projectName",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Nombre del proyecto"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de SPs del proyecto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SPMetadata" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sps": {
+      "get": {
+        "tags": ["Stored Procedures"],
+        "summary": "Buscar stored procedures",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Término de búsqueda"
+          },
+          {
+            "name": "db",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Nombre de la base de datos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de SPs encontrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StoredProcedureCore" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sps/{db}/scan": {
+      "post": {
+        "tags": ["Stored Procedures"],
+        "summary": "Escanear base de datos",
+        "description": "Escanea una base de datos específica para encontrar todos los stored procedures y sincronizarlos con MongoDB",
+        "parameters": [
+          {
+            "name": "db",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Nombre de la base de datos a escanear"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Escaneo completado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "scanned": { "type": "number" },
+                    "synced": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sp-detail/{id}": {
+      "get": {
+        "tags": ["SP Detail"],
+        "summary": "Obtener detalles de SP por ID (Base64)",
+        "description": "Requiere un ID codificado en Base64. El ID es un objeto JSON: {\"db\": \"...\", \"schema\": \"...\", \"name\": \"...\"}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID Base64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalles completos del SP",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SPDetail" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StoredProcedureCore": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "schema": { "type": "string" },
+          "database": { "type": "string" },
+          "objectId": { "type": "number" }
+        }
+      },
+      "SPMetadata": {
+        "type": "object",
+        "properties": {
+           "spName": { "type": "string" },
+           "description": { "type": "string" },
+           "projectReferences": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "SPDetail": {
+        "type": "object",
+        "properties": {
+          "metadata": { "$ref": "#/components/schemas/SPMetadata" },
+          "definition": {
+            "type": "object",
+            "properties": {
+              "definition": { "type": "string" },
+              "parameters": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

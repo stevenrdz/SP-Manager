@@ -15,4 +15,4 @@ EXPOSE 3000
 ENV PORT 3000
 
 # Start seed in background (will wait for server) then start dev server
-CMD ["sh", "-c", "npm run seed & npm run dev"]
+CMD ["npm", "run", "dev"]

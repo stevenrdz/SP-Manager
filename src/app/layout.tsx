@@ -10,6 +10,7 @@ import AppSidebar from "@/layout/AppSidebar";
 import AppHeader from "@/layout/AppHeader";
 import Backdrop from "@/layout/Backdrop";
 import { ToastProvider } from "@/components/ui/Toast";
+import AuthModal from "@/components/common/AuthModal";
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ export default function RootLayout({
                           {children}
                         </div>
                       </main>
+                      <AuthModal />
                       <Backdrop />
                     </div>
                   </div>

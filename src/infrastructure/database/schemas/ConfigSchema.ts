@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { AppConfig } from '@/domain/models/Config';
 
-export interface ConfigDocument extends AppConfig, Document {}
+export interface ConfigDocument extends Omit<AppConfig, '_id'>, Omit<Document, '_id'> {
+  _id: string;
+}
 
 const ConfigSchema = new Schema<ConfigDocument>({
   _id: {

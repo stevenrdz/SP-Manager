@@ -8,8 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { StoredProcedureDefinition, SPMetadata } from "@/domain/entities";
-import { X, Plus, Search, Sparkles, Loader2, Download } from "lucide-react";
+import {
+  X,
+  Plus,
+  Search,
+  Sparkles,
+  Loader2,
+  Download,
+  Copy,
+  Check,
+} from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { SPFlow } from "./SPFlow";
+import { TableInfoModal } from "./TableInfoModal";
 
 interface SPDetailProps {
   database: string;
@@ -31,6 +42,7 @@ export function SPDetail({ database, spIdentifier }: SPDetailProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const { showToast } = useToast();
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
   // Check if OpenAI is configured from localStorage
   const [hasOpenAIConfigured, setHasOpenAIConfigured] = useState(false);
@@ -45,12 +57,16 @@ export function SPDetail({ database, spIdentifier }: SPDetailProps) {
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
 
+  // Table Modal State
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+
   // Parse spIdentifier - handle both formats:
   // 1. "schema.name" (from sidebar)
   // 2. "database::schema.name" (from projects view)
   let schema: string;
   let name: string;
-  
+
   if (spIdentifier.includes("::")) {
     // Format: "database::schema.name"
     const [, schemaAndName] = spIdentifier.split("::");
@@ -69,11 +85,13 @@ export function SPDetail({ database, spIdentifier }: SPDetailProps) {
     try {
       // Create composite ID with proper UTF-8 encoding for Unicode characters
       const jsonStr = JSON.stringify({ db: database, schema, name });
-      const compositeId = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-        return String.fromCharCode(parseInt(p1, 16));
-      }));
+      const compositeId = btoa(
+        encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+          return String.fromCharCode(parseInt(p1, 16));
+        }),
+      );
       const res = await fetch(`/api/sp-detail/${compositeId}`);
-      
+
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -103,7 +121,7 @@ export function SPDetail({ database, spIdentifier }: SPDetailProps) {
 
   useEffect(() => {
     if (database && schema && name) {
-        fetchDetail();
+      fetchDetail();
     }
     fetchAllProjects();
 
@@ -119,7 +137,10 @@ export function SPDetail({ database, spIdentifier }: SPDetailProps) {
   // Handle clicks outside suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+      if (
+        suggestionRef.current &&
+        !suggestionRef.current.contains(event.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     };
@@ -139,18 +160,17 @@ export function SPDetail({ database, spIdentifier }: SPDetailProps) {
 
       // Create composite ID with proper UTF-8 encoding for Unicode characters
       const jsonStr = JSON.stringify({ db: database, schema, name });
-      const compositeId = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-        return String.fromCharCode(parseInt(p1, 16));
-      }));
-      
-      await fetch(
-        `/api/sp-detail/${compositeId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newMeta),
-        }
+      const compositeId = btoa(
+        encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+          return String.fromCharCode(parseInt(p1, 16));
+        }),
       );
+
+      await fetch(`/api/sp-detail/${compositeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMeta),
+      });
 
       // Refresh suggestions in case a new project was added
       fetchAllProjects();
@@ -184,10 +204,10 @@ ${data.definition || "No disponible"}`;
       const response = await fetch("/api/config/openai/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt,
           apiKey,
-          model
+          model,
         }),
       });
 
@@ -201,9 +221,9 @@ ${data.definition || "No disponible"}`;
             <div className="flex flex-col gap-1">
               <span className="font-bold">Cuota de OpenAI excedida</span>
               <span className="text-xs">{result.details}</span>
-              <a 
-                href={result.link} 
-                target="_blank" 
+              <a
+                href={result.link}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-white bg-red-500 px-2 py-1 rounded mt-1 text-center font-bold"
               >
@@ -211,7 +231,7 @@ ${data.definition || "No disponible"}`;
               </a>
             </div>,
             "error",
-            10000 // 10 seconds for this critical error
+            10000, // 10 seconds for this critical error
           );
         } else {
           showToast(`Error: ${result.error || "No se pudo analizar"}`, "error");
@@ -253,7 +273,6 @@ ${data.definition || "No disponible"}`;
     }
   };
 
-
   const addProjectTag = (project: string) => {
     const trimmed = project.trim();
     if (trimmed && !projectTags.includes(trimmed)) {
@@ -265,7 +284,9 @@ ${data.definition || "No disponible"}`;
 
   const removeProjectTag = (project: string) => {
     const trimmed = project.trim();
-    setProjectTags((prev: string[]) => prev.filter((t: string) => t !== trimmed));
+    setProjectTags((prev: string[]) =>
+      prev.filter((t: string) => t !== trimmed),
+    );
     showToast(`Proyecto "${trimmed}" eliminado`, "info");
   };
 
@@ -277,8 +298,14 @@ ${data.definition || "No disponible"}`;
   const saveEditingProject = () => {
     if (!editingProject) return;
     const trimmed = editingValue.trim();
-    if (trimmed && trimmed !== editingProject && !projectTags.includes(trimmed)) {
-      setProjectTags((prev: string[]) => prev.map((p: string) => p === editingProject ? trimmed : p));
+    if (
+      trimmed &&
+      trimmed !== editingProject &&
+      !projectTags.includes(trimmed)
+    ) {
+      setProjectTags((prev: string[]) =>
+        prev.map((p: string) => (p === editingProject ? trimmed : p)),
+      );
     }
     setEditingProject(null);
     setEditingValue("");
@@ -289,35 +316,50 @@ ${data.definition || "No disponible"}`;
     setEditingValue("");
   };
 
-  const filteredSuggestions = allProjects.filter((p: string) => 
-    p.toLowerCase().includes(projectInput.toLowerCase()) && 
-    !projectTags.includes(p)
+  const filteredSuggestions = allProjects.filter(
+    (p: string) =>
+      p.toLowerCase().includes(projectInput.toLowerCase()) &&
+      !projectTags.includes(p),
   );
 
   const handleExportSQL = () => {
     if (!data) return;
-    
+
     // Create file content
-    const content = data.definition || '';
-    
+    const content = data.definition || "";
+
     // Create blob
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+
     // Create download link
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `${data.schema}.${data.name}.sql`;
-    
+
     // Trigger download
     document.body.appendChild(link);
     link.click();
-    
+
     // Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
+
     showToast(`Archivo ${data.schema}.${data.name}.sql descargado`, "success");
+  };
+
+  const handleCopySQL = async () => {
+    if (!data || !data.definition) return;
+    
+    try {
+      await navigator.clipboard.writeText(data.definition);
+      setCopied(true);
+      showToast("Código SQL copiado al portapapeles", "success");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      showToast("Error al copiar al portapapeles", "error");
+    }
   };
 
   if (loading) return <div>Cargando detalle...</div>;
@@ -332,7 +374,12 @@ ${data.definition || "No disponible"}`;
         <div className="flex flex-col gap-2 w-full sm:w-auto">
           <div className="flex gap-2 w-full sm:w-auto">
             {hasOpenAIConfigured ? (
-              <Button variant="secondary" onClick={handleAnalyzeWithAI} disabled={analyzing || saving} className="flex-1 sm:flex-none">
+              <Button
+                variant="secondary"
+                onClick={handleAnalyzeWithAI}
+                disabled={analyzing || saving}
+                className="flex-1 sm:flex-none"
+              >
                 {analyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -346,7 +393,11 @@ ${data.definition || "No disponible"}`;
                 )}
               </Button>
             ) : null}
-            <Button onClick={handleSave} disabled={saving || analyzing} className="flex-1 sm:flex-none">
+            <Button
+              onClick={handleSave}
+              disabled={saving || analyzing}
+              className="flex-1 sm:flex-none"
+            >
               {saving ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </div>
@@ -364,6 +415,7 @@ ${data.definition || "No disponible"}`;
       <Tabs defaultValue="doc" className="w-full">
         <TabsList>
           <TabsTrigger value="doc">Documentación</TabsTrigger>
+          <TabsTrigger value="flow">Flujo SP</TabsTrigger>
           <TabsTrigger value="code">Código SQL</TabsTrigger>
           <TabsTrigger value="meta">Metadatos</TabsTrigger>
           {aiAnalysis && <TabsTrigger value="ai">Análisis IA</TabsTrigger>}
@@ -392,118 +444,152 @@ ${data.definition || "No disponible"}`;
             <CardContent>
               <div className="space-y-4 text-gray-500 rounded p-2 border border-blue-500">
                 <div className="flex flex-wrap gap-2 mb-2">
-                    {projectTags.length > 0 ? (
-                        projectTags.map((p: string) => (
-                            <div key={p}>
-                                {editingProject === p ? (
-                                    <Input
-                                        value={editingValue}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingValue(e.target.value)}
-                                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                saveEditingProject();
-                                            } else if (e.key === 'Escape') {
-                                                cancelEditingProject();
-                                            }
-                                        }}
-                                        onBlur={saveEditingProject}
-                                        autoFocus
-                                        className="h-8 w-32 text-sm"
-                                    />
-                                ) : (
-                                    <Badge 
-                                        variant="default" 
-                                        className="flex items-center gap-1.5 px-3 py-1 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200 cursor-pointer"
-                                        onDoubleClick={() => startEditingProject(p)}
-                                        title="Doble clic para editar"
-                                    >
-                                        {p}
-                                        <button 
-                                            onClick={(e: React.MouseEvent) => {
-                                                e.stopPropagation();
-                                                removeProjectTag(p);
-                                            }}
-                                            className="hover:text-red-600 transition-colors"
-                                            title="Eliminar"
-                                        >
-                                            <X className="h-3.5 w-3.5" />
-                                        </button>
-                                    </Badge>
-                                )}
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-sm italic text-gray-400">No hay proyectos vinculados.</p>
-                    )}
+                  {projectTags.length > 0 ? (
+                    projectTags.map((p: string) => (
+                      <div key={p}>
+                        {editingProject === p ? (
+                          <Input
+                            value={editingValue}
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) => setEditingValue(e.target.value)}
+                            onKeyDown={(
+                              e: React.KeyboardEvent<HTMLInputElement>,
+                            ) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                saveEditingProject();
+                              } else if (e.key === "Escape") {
+                                cancelEditingProject();
+                              }
+                            }}
+                            onBlur={saveEditingProject}
+                            autoFocus
+                            className="h-8 w-32 text-sm"
+                          />
+                        ) : (
+                          <Badge
+                            variant="default"
+                            className="flex items-center gap-1.5 px-3 py-1 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200 cursor-pointer"
+                            onDoubleClick={() => startEditingProject(p)}
+                            title="Doble clic para editar"
+                          >
+                            {p}
+                            <button
+                              onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                removeProjectTag(p);
+                              }}
+                              className="hover:text-red-600 transition-colors"
+                              title="Eliminar"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </Badge>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm italic text-gray-400">
+                      No hay proyectos vinculados.
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative" ref={suggestionRef}>
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                            <Input
-                                value={projectInput}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    setProjectInput(e.target.value);
-                                    setShowSuggestions(true);
-                                }}
-                                onFocus={() => setShowSuggestions(true)}
-                                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        addProjectTag(projectInput);
-                                    }
-                                }}
-                                placeholder="Buscar o añadir proyecto..."
-                                className="pl-9"
-                            />
-                        </div>
-                        <Button 
-                            variant="outline" 
-                            onClick={() => addProjectTag(projectInput)}
-                            disabled={!projectInput.trim()}
-                        >
-                            <Plus className="h-4 w-4 mr-2" /> Añadir
-                        </Button>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                      <Input
+                        value={projectInput}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setProjectInput(e.target.value);
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        onKeyDown={(
+                          e: React.KeyboardEvent<HTMLInputElement>,
+                        ) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addProjectTag(projectInput);
+                          }
+                        }}
+                        placeholder="Buscar o añadir proyecto..."
+                        className="pl-9"
+                      />
                     </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => addProjectTag(projectInput)}
+                      disabled={!projectInput.trim()}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Añadir
+                    </Button>
+                  </div>
 
-                    {showSuggestions && projectInput.trim() && filteredSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg max-h-60 overflow-auto">
-                            {filteredSuggestions.map((suggestion: string) => (
-                                <button
-                                    key={suggestion}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                                    onClick={() => addProjectTag(suggestion)}
-                                >
-                                    {suggestion}
-                                </button>
-                            ))}
-                        </div>
+                  {showSuggestions &&
+                    projectInput.trim() &&
+                    filteredSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {filteredSuggestions.map((suggestion: string) => (
+                          <button
+                            key={suggestion}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                            onClick={() => addProjectTag(suggestion)}
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
                     )}
                 </div>
-                
+
                 <p className="text-xs text-gray-500">
-                  <strong>Tip:</strong> Haz doble clic en un proyecto para editarlo. Presiona Enter o el botón "+" para añadir uno nuevo. Presiona Escape para cancelar la edición.
+                  <strong>Tip:</strong> Haz doble clic en un proyecto para
+                  editarlo. Presiona Enter o el botón "+" para añadir uno nuevo.
+                  Presiona Escape para cancelar la edición.
                 </p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        <TabsContent value="flow">
+          <SPFlow 
+            sql={data.definition} 
+            spName={data.name} 
+            onTableClick={(tableName) => {
+              setSelectedTable(tableName);
+              setIsTableModalOpen(true);
+            }} 
+          />
+        </TabsContent>
+
         <TabsContent value="code">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Código SQL</CardTitle>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleExportSQL}
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Exportar SQL
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportSQL}
+                  title="Exportar SQL"
+                  className="h-8 w-8 p-0"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleCopySQL}
+                  title={copied ? "Copiado" : "Copiar SQL"}
+                  className="h-8 w-8 p-0"
+                >
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <pre className="rounded-md bg-gray-100 p-4 text-xs text-gray-800 dark:bg-gray-900/80 dark:text-gray-100 overflow-x-auto">
@@ -521,7 +607,9 @@ ${data.definition || "No disponible"}`;
               </div>
               <ul className="list-disc pl-5">
                 {data.metadata.tablesUsed.length ? (
-                  data.metadata.tablesUsed.map((t: string) => <li key={t}>{t}</li>)
+                  data.metadata.tablesUsed.map((t: string) => (
+                    <li key={t}>{t}</li>
+                  ))
                 ) : (
                   <li>Ninguna detectada</li>
                 )}
@@ -538,7 +626,9 @@ ${data.definition || "No disponible"}`;
           <TabsContent value="ai">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-md font-bold">Análisis Inteligente</CardTitle>
+                <CardTitle className="text-md font-bold">
+                  Análisis Inteligente
+                </CardTitle>
                 <Sparkles className="h-4 w-4 text-brand-500" />
               </CardHeader>
               <CardContent>
@@ -548,14 +638,31 @@ ${data.definition || "No disponible"}`;
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => {
-                        setDesc((prev: string) => prev ? `${prev}\n\n---\n### Análisis IA\n${aiAnalysis}` : aiAnalysis);
-                        // Also update full data object to reflect other possible changes
-                        setData((prev: FullDetail | null) => prev ? { ...prev, metadata: { ...prev.metadata, description: aiAnalysis } } : null);
-                        showToast("Análisis copiado a la documentación. No olvides guardar los cambios.", "info");
+                      setDesc((prev: string) =>
+                        prev
+                          ? `${prev}\n\n---\n### Análisis IA\n${aiAnalysis}`
+                          : aiAnalysis,
+                      );
+                      // Also update full data object to reflect other possible changes
+                      setData((prev: FullDetail | null) =>
+                        prev
+                          ? {
+                              ...prev,
+                              metadata: {
+                                ...prev.metadata,
+                                description: aiAnalysis,
+                              },
+                            }
+                          : null,
+                      );
+                      showToast(
+                        "Análisis copiado a la documentación. No olvides guardar los cambios.",
+                        "info",
+                      );
                     }}
                   >
                     Usar como descripción
@@ -566,7 +673,13 @@ ${data.definition || "No disponible"}`;
           </TabsContent>
         )}
       </Tabs>
+
+      <TableInfoModal 
+        isOpen={isTableModalOpen} 
+        onClose={() => setIsTableModalOpen(false)} 
+        tableName={selectedTable || ""} 
+        database={database}
+      />
     </div>
   );
 }
-

@@ -28,10 +28,33 @@ export interface SPMetadata {
   // Documentation
   description?: string;
   author?: string;
+  cleanDefinition?: string;
   
   // Analysis
   projectReferences: string[]; // Projects that use this SP
   tablesUsed: string[]; // Tables detected in the SP
   
   lastScanDate: Date;
+}
+
+export interface FlowStep {
+  id: string;
+  type: 'select' | 'insert' | 'update' | 'delete' | 'if' | 'else' | 'begin' | 'end' | 'return' | 'params';
+  content: string;
+  tables?: string[];
+  next?: string[];
+}
+
+export interface TableData {
+  database: string;
+  schema: string;
+  name: string;
+  columns: {
+    name: string;
+    type: string;
+    maxLength: number;
+    isNullable: boolean;
+    isPrimaryKey: boolean;
+  }[];
+  sampleData?: any[];
 }

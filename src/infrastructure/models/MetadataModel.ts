@@ -7,6 +7,7 @@ const SPMetadataSchema = new Schema<SPMetadata>({
   database: { type: String, required: true },
   description: { type: String },
   author: { type: String },
+  cleanDefinition: { type: String },
   projectReferences: { type: [String], default: [] },
   tablesUsed: { type: [String], default: [] },
   lastScanDate: { type: Date, default: Date.now }

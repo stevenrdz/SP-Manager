@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { fetchWithAuth } from "@/lib/api";
 
 interface ScanProgress {
   current: number;
@@ -40,7 +41,7 @@ export const ScanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       // 1. Get List of SPs from SQL (Source of Truth)
-      const listRes = await fetch(`/api/sps?db=${encodeURIComponent(db)}&source=sql`);
+      const listRes = await fetchWithAuth(`/api/sps?db=${encodeURIComponent(db)}&source=sql`);
       const allSps = await listRes.json();
       
       const total = allSps.length;
@@ -61,7 +62,7 @@ export const ScanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const batch = allSps.slice(i, min(i + BATCH_SIZE, total));
         
         // Use the sync endpoint
-        const batchRes = await fetch(`/api/sps/${encodeURIComponent(db)}/sync`, {
+        const batchRes = await fetchWithAuth(`/api/sps/${encodeURIComponent(db)}/sync`, {
           method: 'POST',
           body: JSON.stringify({ sps: batch })
         });

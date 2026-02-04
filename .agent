@@ -40,13 +40,30 @@ src/
    - Interactive testing via Swagger UI at `/api-docs`
    - OpenAPI 3.0 specification
 
-3. **SP Documentation**
+3. **Security**
+   - **Encryption**: AES-256-CBC encryption for DB passwords and OpenAI keys in `ConfigRepository`.
+   - **Authentication**: Middleware protects critical routes (`/api/config`, `/api/scan`, `/api/auth/validate`) requiring `x-api-key` or Basic Auth.
+   - **Auth UI**: `AuthModal` intercepts 401 responses and pre-fetch checks to prompt for Admin Key.
+   - **Pre-fetch Blocking**: `fetchWithAuth` blocks protected requests if the key is missing in `localStorage`, showing the auth modal immediately.
+   - **Admin Management**: Dedicated **Seguridad** tab in Configuration page to validate and save the Admin API Key.
+   - **Masking**: Sensitive data is masked in API responses.
+
+4. **SP Documentation**
    - View, edit, and save SP descriptions
    - Project tagging system with autocomplete
    - AI-powered documentation generation
-   - SQL code export to `.sql` files
+   - **Copy SQL**: Direct clipboard copy with visual feedback
+   - **SQL code export** to `.sql` files
+   - **SQL Cleaning**: Automatically cleans and formats SQL code (removes comments, standardizes format) on sync
 
-4. **Navigation**
+5. **SP Flow Visualization (Human-Friendly)**
+   - Intuitive diagrams using Mermaid.js (vertical flow)
+   - Logic extraction: Translates technical SQL commands to business actions (e.g., "Proceso de Inserción")
+   - **Input Parameters Grouping**: Automatically identifies and displays SP parameters
+   - **Interactive Controls**: Support for Zoom, Pan, and resizing view
+   - Clickable table nodes that open a metadata modal with JSON samples
+
+6. **Navigation**
    - All navigation uses absolute URLs (`/`) to ensure consistency
    - Sidebar, header, and list components navigate to root page
 
@@ -64,6 +81,7 @@ src/
 ### API Endpoints
 
 All API routes are in `src/app/api/`:
+
 - `config/` - Configuration management
 - `databases/` - List databases
 - `sps/` - List stored procedures
@@ -73,6 +91,7 @@ All API routes are in `src/app/api/`:
 - `backup/` - Export functionality
 - `statistics/` - System statistics
 - `doc/` - OpenAPI specification
+- `table/` - Table metadata and sample data
 
 ### Frontend Components
 
@@ -81,6 +100,8 @@ All API routes are in `src/app/api/`:
 - **ProjectsView**: `src/components/projects/ProjectsView.tsx` - Search SPs by project
 - **DatabaseConfig**: `src/components/DatabaseConfig.tsx` - Database configuration UI
 - **OpenAIConfig**: `src/components/OpenAIConfig.tsx` - OpenAI configuration UI
+- **SPFlow**: `src/components/sp/SPFlow.tsx` - Mermaid-based flow visualization
+- **TableInfoModal**: `src/components/sp/TableInfoModal.tsx` - Table metadata and JSON sample data modal
 
 ### Layout Components
 
@@ -122,10 +143,12 @@ All API routes are in `src/app/api/`:
 ### Fixing Navigation Issues
 
 All navigation should use **absolute URLs** starting with `/`:
+
 - ✅ `router.push(\`/?db=${db}&sp=${sp}\`)`
 - ❌ `router.push(\`?db=${db}&sp=${sp}\`)` (relative, breaks from non-root pages)
 
 Check these files for navigation:
+
 - `src/layout/AppSidebar.tsx` - SP links
 - `src/layout/AppHeader.tsx` - Database selector
 - `src/components/sp/SPList.tsx` - SP list clicks
@@ -193,12 +216,14 @@ docker-compose logs -f     # View logs
 ### TypeScript Lint Errors
 
 The IDE may show lint errors for missing type definitions. These are expected during development and don't affect runtime:
+
 - `Cannot find module 'react'` - Types are installed, IDE issue
 - `JSX element implicitly has type 'any'` - IDE issue, works at runtime
 
 ### Navigation Not Working
 
 If navigation doesn't update the page:
+
 1. Check if using absolute URLs (`/` prefix)
 2. Verify `router.push()` is from `next/navigation`
 3. Check browser console for errors
@@ -206,6 +231,7 @@ If navigation doesn't update the page:
 ### Configuration Not Persisting
 
 If configuration doesn't save:
+
 1. Check MongoDB connection
 2. Verify `ConfigService` is being used
 3. Check API endpoint responses in Network tab
@@ -233,6 +259,7 @@ If configuration doesn't save:
 ## Support
 
 For questions or issues:
+
 1. Check this `.agent` file first
 2. Review `README.md` for user documentation
 3. Check `walkthrough.md` in artifacts for implementation details
@@ -240,6 +267,12 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-01-28
-**Version**: 1.0.0
+- **SQL code export** to `.sql` files with simplified icon-only buttons
+- **SQL Cleaning**: Automatically cleans and formats SQL code (removes comments, standardizes format) on sync
+- **Advanced SQL Parsing**: Extracts multi-line statements and translates them into business-friendly terms (e.g., "Consultar datos de SEG_USUARIOS")
+
+... (rest of the file)
+
+**Last Updated**: 2026-02-04
+**Version**: 1.2.0
 **Maintained by**: Steven Rodríguez

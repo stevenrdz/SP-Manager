@@ -22,7 +22,7 @@ const SPCard: React.FC<SPCardProps> = ({ sp, onClick }) => {
       className="group cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 hover:border-brand-500 hover:shadow-md transition-all duration-200"
     >
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-brand-500 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-brand-500 transition-colors break-all">
           {sp.spName}
         </h3>
         

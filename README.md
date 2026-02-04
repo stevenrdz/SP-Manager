@@ -1,4 +1,4 @@
-# 📚 SP Manager - SQL Server Stored Procedure Documentation Tool
+# SP Manager - SQL Server Stored Procedure Documentation Tool
 
 > **Una aplicación moderna para gestionar, documentar y analizar Stored Procedures de SQL Server con inteligencia artificial y configuración dinámica.**
 
@@ -9,22 +9,23 @@
 
 ---
 
-## 🎯 Descripción
+## Descripción
 
 **SP Manager** es una herramienta web diseñada para equipos de desarrollo y DBAs que necesitan mantener documentación actualizada de sus Stored Procedures en SQL Server. El proyecto resuelve el problema común de la falta de documentación técnica centralizada, permitiendo:
 
-- 🔍 **Explorar** múltiples bases de datos SQL Server desde una interfaz unificada
-- 📝 **Documentar** cada SP con descripciones detalladas y metadatos
-- 🏷️ **Organizar** SPs por proyectos relacionados mediante un sistema de etiquetas inteligente
-- 🤖 **Automatizar** la generación de documentación usando OpenAI
-- 💾 **Sincronizar** automáticamente metadatos en MongoDB para búsquedas rápidas
-- ⚙️ **Configurar** credenciales dinámicamente sin reiniciar Docker
-- 📖 **Documentar APIs** con Swagger UI integrado
-- 📥 **Exportar** código SQL de procedimientos almacenados
+- **Explorar** múltiples bases de datos SQL Server desde una interfaz unificada
+- **Documentar** cada SP con descripciones detalladas y metadatos
+- **Organizar** SPs por proyectos relacionados mediante un sistema de etiquetas inteligente
+- **Automatizar** la generación de documentación usando OpenAI
+- **Sincronizar** automáticamente metadatos en MongoDB para búsquedas rápidas
+- **Configurar** credenciales dinámicamente sin reiniciar Docker
+- **Documentar APIs** con Swagger UI integrado
+- **Búsqueda Global en Código SQL** con vista de fragmentos (snippets)
+- **Exportar** código SQL de procedimientos almacenados
 
 ---
 
-## 🚀 Stack Tecnológico
+## Stack Tecnológico
 
 ### Frontend
 
@@ -60,7 +61,7 @@
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 El proyecto sigue una **arquitectura en capas** inspirada en Clean Architecture:
 
@@ -113,24 +114,25 @@ src/
 
 ---
 
-## ✨ Funcionalidades Principales
+## Funcionalidades Principales
 
-### 1. 🗄️ Exploración de Bases de Datos
+### 1. Exploración de Bases de Datos
 
 - Listado automático de todas las bases de datos SQL Server accesibles
 - Búsqueda y filtrado de Stored Procedures por nombre o esquema
 - Visualización de metadatos (fecha de creación, modificación, parámetros)
 - Navegación consistente desde cualquier página
 
-### 2. 📖 Documentación Completa
+### 2. Documentación Completa
 
 - **Editor de texto enriquecido** para descripciones detalladas
 - **Visualización de código SQL** con syntax highlighting
+- **Copia rápida**: Botón para copiar el código SQL directamente al portapapeles
 - **Exportación de código SQL** a archivos `.sql`
 - **Detección automática** de tablas utilizadas en el SP
 - **Historial de escaneos** para rastrear cambios
 
-### 3. 🏷️ Gestión de Proyectos Relacionados
+### 3. Gestión de Proyectos Relacionados
 
 - **Sistema de etiquetas (tags)** para asociar SPs a proyectos
 - **Autocompletado inteligente** que sugiere proyectos existentes
@@ -138,21 +140,21 @@ src/
 - **Edición inline** con doble clic en los tags
 - **Vista de proyectos** para buscar SPs por proyecto
 
-### 4. 🤖 Generación Automática con IA
+### 4. Generación Automática con IA
 
 - Integración con **OpenAI GPT** para analizar código SQL
 - Generación automática de descripciones técnicas
 - Configuración dinámica de API key y modelo
 - Manejo de errores de cuota con enlaces directos a billing
 
-### 5. 🔄 Sincronización Automática
+### 5. Sincronización
 
 - **Escaneo bajo demanda** con barra de progreso en tiempo real
 - **Actualización incremental** de SPs nuevos o modificados
 - **Exportación a JSON** para backups y versionado
 - **Estadísticas del sistema** (total de SPs, bases de datos, proyectos)
 
-### 6. ⚙️ Configuración Dinámica (Nueva)
+### 6. Configuración Dinámica
 
 - **Gestión de credenciales** sin archivos `.env`
 - **Almacenamiento en MongoDB** con encriptación
@@ -162,7 +164,15 @@ src/
 - **Caché de configuración** (1 minuto TTL)
 - **Soporte multi-base de datos** (SQL Server, PostgreSQL, MySQL, Oracle preparado)
 
-### 7. 📖 Documentación API con Swagger (Nueva)
+### 7. 🔒 Seguridad Reforzada
+
+- **Encriptación AES-256**: Credenciales de base de datos y API Keys se almacenan encriptadas en MongoDB.
+- **Protección de API**: Endpoints críticos (sincronización, configuración, backups) protegidos vía middleware.
+- **Autenticación Preventiva**: El sistema bloquea peticiones sensibles en el frontend si la Admin Key no está presente, mostrando un modal de acceso inmediato.
+- **Gestión de Admin**: Nueva pestaña de **Seguridad** en Configuración para validar y guardar la Admin Key localmente.
+- **Masking**: Las respuestas de la API nunca devuelven contraseñas en texto plano.
+
+### 8. 📖 Documentación API con Swagger
 
 - **Swagger UI integrado** en `/api-docs`
 - **19 endpoints documentados** en español
@@ -170,9 +180,21 @@ src/
 - **Categorías organizadas**: Configuration, Databases, Stored Procedures, Projects, Backup, Statistics
 - **Prueba interactiva** de endpoints desde el navegador
 
+### 8. Visualización de Flujo SP
+
+- **Diagramas de Negocio**: Traduce comandos SQL técnicos (`INSERT`, `UPDATE`, `SELECT`) a términos comprensibles ("Consultar datos de...", "Proceso de Inserción").
+- **Análisis Multi-línea**: Captura el contexto total de cada operación SQL.
+- **Bloque de Parámetros**: Identifica y agrupa automáticamente los parámetros de entrada del SP.
+- **Interactividad Total**:
+  - **Zoom**: Botones para acercar/alejar la vista.
+  - **Pan (Desplazamiento)**: Arrastra el diagrama con el ratón para explorar flujos complejos.
+  - **Ajuste Automático**: Botón para centrar y resetear la vista.
+- **Análisis Lógico**: Visualiza flujos condicionales (`IF/ELSE`) y retornos.
+- **Explorador de tablas**: Haz clic en una tabla para ver su esquema y datos de ejemplo en JSON.
+
 ---
 
-## 📦 Instalación
+## Instalación
 
 ### Requisitos Previos
 
@@ -231,7 +253,7 @@ npm start
 
 ---
 
-## 🐳 Docker
+## Docker
 
 ### Ejecutar con Docker Compose
 
@@ -246,7 +268,7 @@ Esto levantará:
 
 ---
 
-## 📖 Uso
+## Uso
 
 ### 1. Configurar Credenciales (Primera vez)
 
@@ -300,7 +322,7 @@ Esto levantará:
 
 ---
 
-## 🛠️ API Endpoints
+## API Endpoints
 
 ### Configuration
 
@@ -359,114 +381,19 @@ Esto levantará:
 
 ---
 
-## 🔧 Características Técnicas
-
-### Configuración Dinámica
-
-- **Singleton Pattern**: Una única configuración por aplicación
-- **Caché en memoria**: 1 minuto TTL para reducir consultas a MongoDB
-- **Fallback automático**: Si no hay configuración en MongoDB, usa `.env`
-- **Refresh sin reinicio**: Actualiza conexiones SQL sin reiniciar Docker
-- **Validación previa**: Prueba conexiones antes de guardar
-
-### Arquitectura de Datos
-
-- **Composite IDs**: Identificadores únicos basados en `{db, schema, name}`
-- **UTF-8 Encoding**: Soporte completo para caracteres Unicode
-- **Detección de tablas**: Análisis automático de código SQL
-- **Timestamps automáticos**: Fecha de último escaneo en cada SP
-
-### Optimizaciones
-
-- **Búsqueda global**: Búsqueda de SPs en todas las bases de datos
-- **Debouncing**: Búsqueda con delay de 300ms para reducir consultas
-- **Lazy loading**: Carga de datos bajo demanda
-- **Caché de proyectos**: Lista de proyectos cacheada en frontend
-
----
-
-## 📂 Estructura del Proyecto
-
-```
-sp-manager/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/               # API Routes
-│   │   ├── api-docs/          # Documentación Swagger
-│   │   ├── config/            # Página de configuración
-│   │   ├── globals.css        # Estilos globales
-│   │   ├── layout.tsx         # Layout principal
-│   │   └── page.tsx           # Página de inicio
-│   ├── application/           # Servicios de aplicación
-│   │   ├── services/
-│   │   └── di.ts
-│   ├── components/            # Componentes React
-│   │   ├── common/
-│   │   ├── projects/
-│   │   ├── sp/
-│   │   └── ui/
-│   ├── context/               # Contextos React
-│   ├── domain/                # Entidades y contratos
-│   ├── infrastructure/        # Implementaciones
-│   │   ├── database/
-│   │   ├── repositories/
-│   │   └── services/
-│   ├── layout/                # Componentes de layout
-│   └── lib/                   # Utilidades
-├── public/                    # Archivos estáticos
-├── data/                      # Backups JSON
-├── docker-compose.yml         # Configuración Docker
-├── Dockerfile                 # Imagen Docker
-├── package.json               # Dependencias
-└── tsconfig.json              # Configuración TypeScript
-```
-
----
-
-## 🤝 Contribución
-
-¡Las contribuciones son bienvenidas! Si deseas mejorar el proyecto:
-
-1. Fork el repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit tus cambios (`git commit -m 'Añadir nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
-
-### Estándares de Código
-
-- Usa **TypeScript** para todo el código
-- Sigue las convenciones de **ESLint**
-- Escribe código limpio y bien documentado
-- Mantén la arquitectura en capas
-- Documenta endpoints con JSDoc para Swagger
-
----
-
-## 🐛 Reportar Bugs
-
-Si encuentras un bug, por favor abre un **Issue** en GitHub con:
-
-- Descripción del problema
-- Pasos para reproducirlo
-- Comportamiento esperado vs. actual
-- Screenshots (si aplica)
-
----
-
-## 📄 Licencia
+## Licencia
 
 Este proyecto está licenciado bajo la [Licencia MIT](LICENSE) - consulta el archivo LICENSE para más detalles.
 
 ---
 
-## 👨‍💻 Autor
+## Autor
 
 Desarrollado con ❤️ por **Steven Rodríguez**
 
 ---
 
-## 🙏 Agradecimientos
+## Agradecimientos
 
 - [Next.js](https://nextjs.org/) por el framework increíble
 - [shadcn/ui](https://ui.shadcn.com/) por los componentes UI

@@ -58,7 +58,7 @@ const AppHeader: React.FC = () => {
           
           <div className="flex items-center gap-4">
             <button
-              className="flex items-center justify-center w-10 h-10 text-gray-500 border border-gray-200 rounded-lg dark:border-gray-800 dark:text-gray-400 lg:block hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="flex items-center justify-center w-10 h-10 text-gray-500 border border-gray-200 rounded-lg dark:border-gray-800 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={handleToggle}
               aria-label="Toggle Sidebar"
             >
@@ -97,7 +97,7 @@ const AppHeader: React.FC = () => {
             </Select>
 
             <Button 
-                onClick={triggerScan} 
+                onClick={() => triggerScan()} 
                 disabled={!db || isScanning}
                 className="bg-brand-500 hover:bg-brand-600 text-white"
             >

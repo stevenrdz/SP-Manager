@@ -25,11 +25,29 @@ export class MongoMetadataRepository implements IMetadataRepository {
 
   async searchAllMetadata(query: string): Promise<SPMetadata[]> {
     await dbConnect();
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return MetadataModel.find({
       $or: [
-        { spName: { $regex: query, $options: 'i' } },
-        { schema: { $regex: query, $options: 'i' } }
+        { spName: { $regex: escapedQuery, $options: 'i' } },
+        { schema: { $regex: escapedQuery, $options: 'i' } }
       ]
+    }).limit(100).lean();
+  }
+
+  async searchByCode(query: string): Promise<SPMetadata[]> {
+    await dbConnect();
+    // 1. Escape special regex characters
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // 2. Make it robust for SQL formatting:
+    // - Replace literal spaces with \s+ (at least one whitespace)
+    // - Allow optional spaces around parentheses and commas
+    const regexQuery = escapedQuery
+      .replace(/\s+/g, '\\s+')
+      .replace(/\\\(|\\\)|\\,/g, '\\s*$&\\s*');
+    
+    return MetadataModel.find({
+      cleanDefinition: { $regex: regexQuery, $options: 'i' }
     }).limit(100).lean();
   }
 

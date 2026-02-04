@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { fetchWithAuth } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,7 @@ export function OpenAIConfig() {
     setTesting(true);
 
     try {
-      const response = await fetch("/api/config/openai/validate", {
+      const response = await fetchWithAuth("/api/config/openai/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey }),
@@ -87,7 +88,7 @@ export function OpenAIConfig() {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/config/openai/save", {
+      const response = await fetchWithAuth("/api/config/openai/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey, model: selectedModel }),
@@ -119,7 +120,7 @@ export function OpenAIConfig() {
     setTestResponse("");
 
     try {
-      const response = await fetch("/api/config/openai/test", {
+      const response = await fetchWithAuth("/api/config/openai/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

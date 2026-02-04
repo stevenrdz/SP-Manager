@@ -1,6 +1,5 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
+import { fetchWithAuth } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,7 @@ export function DatabaseConfig() {
     setTestResult(null);
 
     try {
-      const response = await fetch("/api/config/database/test", {
+      const response = await fetchWithAuth("/api/config/database/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ server, database, username, password }),
@@ -74,7 +73,7 @@ export function DatabaseConfig() {
     setSaving(true);
     
     try {
-      const response = await fetch("/api/config/database/save", {
+      const response = await fetchWithAuth("/api/config/database/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

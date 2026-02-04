@@ -1,5 +1,5 @@
 import { ISqlRepository } from '@/domain/repositories';
-import { StoredProcedureCore, StoredProcedureDefinition } from '@/domain/entities';
+import { StoredProcedureCore, StoredProcedureDefinition, TableData } from '@/domain/entities';
 import { getSqlPool } from '../sqlConnection';
 import * as sql from 'mssql';
 
@@ -126,5 +126,53 @@ export class SqlServerRepository implements ISqlRepository {
       definition,
       parameters
     };
+  }
+
+  async getTableData(database: string, schema: string, name: string): Promise<TableData | null> {
+    const pool = await getSqlPool();
+    const safeDb = `[${database.replace(/\]/g, ']]')}]`;
+    
+    // Get columns
+    const columnsQuery = `
+      SELECT 
+        c.name,
+        TYPE_NAME(c.user_type_id) as type,
+        c.max_length as maxLength,
+        c.is_nullable as isNullable,
+        ISNULL((SELECT 1 FROM ${safeDb}.sys.index_columns ic 
+                INNER JOIN ${safeDb}.sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+                WHERE i.is_primary_key = 1 AND ic.object_id = c.object_id AND ic.column_id = c.column_id), 0) as isPrimaryKey
+      FROM ${safeDb}.sys.columns c
+      INNER JOIN ${safeDb}.sys.objects o ON c.object_id = o.object_id
+      INNER JOIN ${safeDb}.sys.schemas s ON o.schema_id = s.schema_id
+      WHERE s.name = @schema AND o.name = @name
+    `;
+
+    const request = pool.request();
+    request.input('schema', sql.NVarChar, schema);
+    request.input('name', sql.NVarChar, name);
+    
+    const result = await request.query(columnsQuery);
+    if (result.recordset.length === 0) return null;
+
+    const columns = result.recordset.map((row: any) => ({
+      name: row.name,
+      type: row.type,
+      maxLength: row.maxLength,
+      isNullable: row.isNullable,
+      isPrimaryKey: row.isPrimaryKey === 1
+    }));
+
+    // Get sample data (top 10)
+    let sampleData: any[] = [];
+    try {
+      const sampleQuery = `SELECT TOP 10 * FROM ${safeDb}.${schema}.${name}`;
+      const sampleResult = await pool.request().query(sampleQuery);
+      sampleData = sampleResult.recordset;
+    } catch (e) {
+      console.warn(`Could not fetch sample data for ${database}.${schema}.${name}:`, e);
+    }
+
+    return { database, schema, name, columns, sampleData };
   }
 }

@@ -1,9 +1,10 @@
-import { SPMetadata, StoredProcedureCore, StoredProcedureDefinition } from "./entities";
+import { SPMetadata, StoredProcedureCore, StoredProcedureDefinition, TableData } from "./entities";
 
 export interface ISqlRepository {
   listDatabases(): Promise<string[]>;
   listStoredProcedures(database: string, search?: string): Promise<StoredProcedureCore[]>;
   getStoredProcedureDefinition(database: string, schema: string, name: string): Promise<StoredProcedureDefinition | null>;
+  getTableData(database: string, schema: string, name: string): Promise<TableData | null>;
 }
 
 export interface IMetadataRepository {
@@ -11,6 +12,7 @@ export interface IMetadataRepository {
   saveMetadata(metadata: SPMetadata): Promise<void>;
   listMetadata(database: string): Promise<SPMetadata[]>;
   searchAllMetadata(query: string): Promise<SPMetadata[]>;
+  searchByCode(query: string): Promise<SPMetadata[]>;
   findAllMetadata(): Promise<SPMetadata[]>;
   getAllProjects(): Promise<string[]>;
   getSpsByProject(projectName: string): Promise<SPMetadata[]>;

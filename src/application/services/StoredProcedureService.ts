@@ -2,6 +2,7 @@ import { IMetadataRepository, ISqlRepository } from "@/domain/repositories";
 import { SPMetadata, StoredProcedureDefinition } from "@/domain/entities";
 
 import { OpenAIService } from "@/infrastructure/services/OpenAIService";
+import { SqlCleaner } from "@/lib/SqlCleaner";
 
 export class StoredProcedureService {
   constructor(
@@ -84,6 +85,54 @@ export class StoredProcedureService {
     return this.sqlRepo.listStoredProcedures(database, search);
   }
 
+  async searchInCode(query: string) {
+    if (!query) return [];
+    const metadataList = await this.metaRepo.searchByCode(query);
+    
+    return metadataList.map(m => ({
+      name: m.spName,
+      schema: m.schema,
+      database: m.database,
+      objectId: 0,
+      createDate: m.lastScanDate,
+      modifyDate: m.lastScanDate,
+      // Include a snippet if possible, or just the fact that it matched
+      snippet: this.getSnippet(m.cleanDefinition || '', query)
+    }));
+  }
+
+  private getSnippet(definition: string, query: string): string {
+    // Replicate the robust regex logic for snippet extraction
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regexPattern = escaped
+      .replace(/\s+/g, '\\s+')
+      .replace(/\\\(|\\\)|\\,/g, '\\s*$&\\s*');
+    
+    const regex = new RegExp(regexPattern, 'i');
+    const match = regex.exec(definition);
+    
+    if (!match) {
+      // Fallback to basic case-insensitive index if regex fails
+      const index = definition.toLowerCase().indexOf(query.toLowerCase());
+      if (index === -1) return '';
+      const start = Math.max(0, index - 50);
+      const end = Math.min(definition.length, index + query.length + 50);
+      return (start > 0 ? '...' : '') + definition.substring(start, end).trim() + (end < definition.length ? '...' : '');
+    }
+    
+    const index = match.index;
+    const matchLength = match[0].length;
+    
+    const start = Math.max(0, index - 50);
+    const end = Math.min(definition.length, index + matchLength + 50);
+    let snippet = definition.substring(start, end);
+    
+    if (start > 0) snippet = '...' + snippet;
+    if (end < definition.length) snippet = snippet + '...';
+    
+    return snippet;
+  }
+
   async getProcedureDetails(database: string, schema: string, name: string) {
     console.log(`[SERVICE] ========== getProcedureDetails Called ==========`);
     console.log(`[SERVICE] Parameters: database="${database}", schema="${schema}", name="${name}"`);
@@ -114,6 +163,10 @@ export class StoredProcedureService {
 
   async updateMetadata(metadata: SPMetadata): Promise<void> {
     return this.metaRepo.saveMetadata(metadata);
+  }
+
+  async getTableData(database: string, schema: string, name: string) {
+    return this.sqlRepo.getTableData(database, schema, name);
   }
 
   async scanAndSyncDatabase(database: string): Promise<{ scanned: number, updated: number }> {
@@ -170,6 +223,9 @@ export class StoredProcedureService {
     // Matches: FROM [Schema].[Table] or FROM Table
     // Regex explanation: FROM\s+ (ignore case) then capture word or bracketed word
     // It's tricky to get perfect without a SQL Parser, but basic regex works for many cases.
+    
+    // 3. Clean and Format SQL
+    defaultMeta.cleanDefinition = SqlCleaner.clean(sp.definition);
     
     return defaultMeta;
   }
